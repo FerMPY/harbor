@@ -12,7 +12,7 @@ self-contained binary, **no Node runtime**, cross-platform across **macOS and
 Linux** via the `listeners` + `sysinfo` crates (no `lsof`/`ps` shell-outs).
 
 ```
-⚓ harbor  3 dev · 0 system
+⚓ harbor  4 dev · 0 system
 ▌● 3000   node          Next.js    98248  1d 11:30  0.0  53M  ~/Works/.../checkout  ⎇ feat/checkout-page
  ● 3009   node          Vite       51006  00:16:30  0.2  58M  ~/Works/.../core-api  ⎇ feat/cart-pricing
  ● 4319   bun                      14992  2d 05:54  0.0   7M  ~/My Projects/poc  ⎇ main   (orphaned)
@@ -58,22 +58,35 @@ x            kill (y=TERM, K=KILL)    /  filter    a  toggle system    r  refres
 
 ## Install
 
-### From source
-
-```sh
-cargo install --path .          # installs to ~/.cargo/bin/harbor
-# or build and symlink:
-cargo build --release
-ln -sf "$PWD/target/release/harbor" ~/.local/bin/harbor
-```
-
-Requires Rust (`brew install rust`, or `apt install cargo` on Linux).
-
-### Homebrew (once published)
+### Homebrew (recommended)
 
 ```sh
 brew install FerMPY/tap/harbor
 ```
+
+macOS and Linux. Installs a prebuilt binary — no Rust toolchain required.
+
+### Prebuilt binary
+
+Download the archive for your platform from the
+[latest release](https://github.com/FerMPY/harbor/releases/latest), then put
+`harbor` somewhere on your `PATH`:
+
+```sh
+tar -xzf harbor-aarch64-apple-darwin.tar.gz
+mv harbor /usr/local/bin/        # or anywhere on your PATH
+```
+
+### From source
+
+```sh
+cargo install --git https://github.com/FerMPY/harbor   # latest from main
+# or clone and build:
+cargo build --release            # -> target/release/harbor
+```
+
+Building from source requires Rust (`brew install rust`, or `apt install cargo`
+on Linux).
 
 ## How it works
 
