@@ -11,14 +11,7 @@ A fast, native (Rust) alternative to npm-distributed port viewers. Single
 self-contained binary, **no Node runtime**, cross-platform across **macOS and
 Linux** via the `listeners` + `sysinfo` crates (no `lsof`/`ps` shell-outs).
 
-```
-⚓ harbor  4 dev · 0 system
-▌● 3000   node          Next.js    98248  1d 11:30  0.0  53M  ~/Works/.../checkout  ⎇ feat/checkout-page
- ● 3009   node          Vite       51006  00:16:30  0.2  58M  ~/Works/.../core-api  ⎇ feat/cart-pricing
- ● 4319   bun                      14992  2d 05:54  0.0   7M  ~/My Projects/poc  ⎇ main   (orphaned)
- ● 5452   OrbStack…     postgres:16.8  56621  11:05  0.0  471M  primary-db-v3
- ↑↓ move  o open  x kill  / filter  a all/dev  r refresh  q quit
-```
+![harbor demo](docs/demo.gif)
 
 ## Why
 

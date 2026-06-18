@@ -3,6 +3,12 @@
 All notable changes to harbor are documented here. Format loosely follows
 [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased]
+
+### Added
+- Detect Expo / React Native projects from `package.json` dependencies.
+- README demo gif.
+
 ## [0.2.0] — 2026-06-18
 
 ### Added

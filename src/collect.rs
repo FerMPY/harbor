@@ -506,6 +506,8 @@ fn framework_from_package_json(dir: &Path) -> Option<String> {
         ("@remix-run/react", "Remix"),
         ("astro", "Astro"),
         ("gatsby", "Gatsby"),
+        ("expo", "Expo"),
+        ("react-native", "React Native"),
         ("@nestjs/core", "NestJS"),
         ("react-scripts", "CRA"),
         ("express", "Express"),
