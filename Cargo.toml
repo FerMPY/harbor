@@ -1,0 +1,22 @@
+[package]
+name = "harbor"
+version = "0.1.0"
+edition = "2021"
+description = "See what's docked at every port — local dev servers, grouped by project, in your terminal."
+license = "MIT"
+repository = "https://github.com/FerMPY/harbor"
+readme = "README.md"
+
+[[bin]]
+name = "harbor"
+path = "src/main.rs"
+
+[dependencies]
+ratatui = "0.29"
+serde_json = "1"
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "z"
+codegen-units = 1
