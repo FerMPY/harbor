@@ -85,7 +85,10 @@ impl App {
         if self.rows.is_empty() {
             return;
         }
-        let i = self.state.selected().map_or(0, |i| (i + 1) % self.rows.len());
+        let i = self
+            .state
+            .selected()
+            .map_or(0, |i| (i + 1) % self.rows.len());
         self.state.select(Some(i));
     }
 

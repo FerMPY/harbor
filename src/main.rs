@@ -174,10 +174,10 @@ fn marker(l: &Listener) -> &'static str {
         return if l.is_dev() { "*" } else { " " };
     }
     match l.health {
-        Health::Zombie => "\x1b[31m●\x1b[0m",   // red
-        Health::Orphaned => "\x1b[33m●\x1b[0m", // yellow
+        Health::Zombie => "\x1b[31m●\x1b[0m",           // red
+        Health::Orphaned => "\x1b[33m●\x1b[0m",         // yellow
         Health::Ok if l.is_dev() => "\x1b[32m●\x1b[0m", // green
-        _ => "\x1b[2m·\x1b[0m",                 // dim
+        _ => "\x1b[2m·\x1b[0m",                         // dim
     }
 }
 
@@ -237,7 +237,10 @@ fn print_json() {
             })
         })
         .collect();
-    println!("{}", serde_json::to_string_pretty(&serde_json::Value::Array(arr)).unwrap());
+    println!(
+        "{}",
+        serde_json::to_string_pretty(&serde_json::Value::Array(arr)).unwrap()
+    );
 }
 
 fn cmd_kill(args: &[String]) {
@@ -273,7 +276,10 @@ fn cmd_kill(args: &[String]) {
             .filter(|l| l.ports.contains(&(n as u16)) && n <= u16::MAX as u32)
             .collect();
         let pids: Vec<(u32, String)> = if !by_port.is_empty() {
-            by_port.iter().map(|l| (l.pid, format!(":{n} {}", l.command))).collect()
+            by_port
+                .iter()
+                .map(|l| (l.pid, format!(":{n} {}", l.command)))
+                .collect()
         } else if snapshot.iter().any(|l| l.pid == n) {
             vec![(n, format!("pid {n}"))]
         } else {
@@ -306,7 +312,12 @@ fn cmd_clean(args: &[String]) {
         return;
     }
     for l in reap {
-        let what = format!(":{} {} [{}]", l.ports_str(), l.command, health_label(l.health));
+        let what = format!(
+            ":{} {} [{}]",
+            l.ports_str(),
+            l.command,
+            health_label(l.health)
+        );
         if dry {
             println!("would reap {what} (pid {})", l.pid);
             continue;
@@ -314,7 +325,10 @@ fn cmd_clean(args: &[String]) {
         if collector.kill(l.pid, hard) {
             println!("reaped {what} (pid {})", l.pid);
         } else {
-            eprintln!("could not reap {what} (pid {}) — zombies need their parent to exit", l.pid);
+            eprintln!(
+                "could not reap {what} (pid {}) — zombies need their parent to exit",
+                l.pid
+            );
         }
     }
 }
@@ -330,7 +344,11 @@ fn cmd_watch() -> io::Result<()> {
         for l in collector.snapshot() {
             let label = {
                 let proj = l.project.clone().unwrap_or_default();
-                let fw = l.framework.clone().map(|f| format!(" {f}")).unwrap_or_default();
+                let fw = l
+                    .framework
+                    .clone()
+                    .map(|f| format!(" {f}"))
+                    .unwrap_or_default();
                 format!("{}{}  {}", l.command, fw, proj)
             };
             for p in &l.ports {

@@ -1,5 +1,9 @@
 # ⚓ harbor
 
+[![CI](https://github.com/FerMPY/harbor/actions/workflows/ci.yml/badge.svg)](https://github.com/FerMPY/harbor/actions/workflows/ci.yml)
+![Platforms: macOS · Linux](https://img.shields.io/badge/platforms-macOS%20%C2%B7%20Linux-blue)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
 See what's docked at every local port — dev servers, databases, and Docker
 containers — **grouped by the project they belong to**, right in your terminal.
 

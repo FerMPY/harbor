@@ -10,7 +10,9 @@ use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use sysinfo::{Pid, ProcessRefreshKind, ProcessStatus, ProcessesToUpdate, Signal, System, UpdateKind};
+use sysinfo::{
+    Pid, ProcessRefreshKind, ProcessStatus, ProcessesToUpdate, Signal, System, UpdateKind,
+};
 
 /// Refresh kind that actually fetches the command line and working directory
 /// (the plain `refresh_processes` skips both for speed). cmd/cwd/exe are only
@@ -87,7 +89,11 @@ impl Listener {
         self.kind != Kind::System
     }
     pub fn ports_str(&self) -> String {
-        self.ports.iter().map(|p| p.to_string()).collect::<Vec<_>>().join(",")
+        self.ports
+            .iter()
+            .map(|p| p.to_string())
+            .collect::<Vec<_>>()
+            .join(",")
     }
     pub fn min_port(&self) -> u16 {
         self.ports.iter().copied().min().unwrap_or(0)
@@ -113,18 +119,63 @@ impl Listener {
             self.full_cmd,
             self.framework.as_deref().unwrap_or(""),
             self.git_branch.as_deref().unwrap_or(""),
-            self.cwd.as_ref().map(|p| p.display().to_string()).unwrap_or_default(),
+            self.cwd
+                .as_ref()
+                .map(|p| p.display().to_string())
+                .unwrap_or_default(),
         )
         .to_lowercase()
     }
 }
 
 const DEV_TOKENS: &[&str] = &[
-    "node", "bun", "deno", "npm", "pnpm", "yarn", "nodemon", "tsx", "ts-node", "next",
-    "vite", "nuxt", "webpack", "esbuild", "rollup", "parcel", "astro", "remix", "serve",
-    "http-server", "python", "flask", "gunicorn", "uvicorn", "hypercorn", "celery", "ruby",
-    "rails", "puma", "rackup", "php", "artisan", "java", "gradle", "mvn", "cargo", "rustc",
-    "air", "dotnet", "caddy", "ng", "rsbuild", "turbo", "wrangler", "vitest", "jest", "metro",
+    "node",
+    "bun",
+    "deno",
+    "npm",
+    "pnpm",
+    "yarn",
+    "nodemon",
+    "tsx",
+    "ts-node",
+    "next",
+    "vite",
+    "nuxt",
+    "webpack",
+    "esbuild",
+    "rollup",
+    "parcel",
+    "astro",
+    "remix",
+    "serve",
+    "http-server",
+    "python",
+    "flask",
+    "gunicorn",
+    "uvicorn",
+    "hypercorn",
+    "celery",
+    "ruby",
+    "rails",
+    "puma",
+    "rackup",
+    "php",
+    "artisan",
+    "java",
+    "gradle",
+    "mvn",
+    "cargo",
+    "rustc",
+    "air",
+    "dotnet",
+    "caddy",
+    "ng",
+    "rsbuild",
+    "turbo",
+    "wrangler",
+    "vitest",
+    "jest",
+    "metro",
 ];
 
 /// Holds a persistent `System` so CPU usage is meaningful across refreshes.
@@ -142,16 +193,19 @@ impl Collector {
     /// One refresh — CPU reflects usage since the previous snapshot (good for
     /// the always-on TUI which ticks every couple seconds).
     pub fn snapshot(&mut self) -> Vec<Listener> {
-        self.sys.refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
+        self.sys
+            .refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
         build(&self.sys)
     }
 
     /// Two refreshes with a short gap — gives a real CPU reading for one-shot
     /// CLI commands (`--list`, `ps`, `--json`).
     pub fn snapshot_measured(&mut self) -> Vec<Listener> {
-        self.sys.refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
+        self.sys
+            .refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
         std::thread::sleep(sysinfo::MINIMUM_CPU_UPDATE_INTERVAL);
-        self.sys.refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
+        self.sys
+            .refresh_processes_specifics(ProcessesToUpdate::All, true, detail_kind());
         build(&self.sys)
     }
 
@@ -213,13 +267,12 @@ fn build(sys: &System) -> Vec<Listener> {
             .filter(|s| !s.is_empty())
             .unwrap_or_else(|| command.clone());
         let cwd = proc.and_then(|p| p.cwd().map(Path::to_path_buf));
-        let cpu = proc.map(|p| format!("{:.1}", p.cpu_usage())).unwrap_or_default();
+        let cpu = proc
+            .map(|p| format!("{:.1}", p.cpu_usage()))
+            .unwrap_or_default();
         let mem = proc.map(|p| human_mem(p.memory())).unwrap_or_default();
         let uptime = proc.map(|p| fmt_uptime(p.run_time())).unwrap_or_default();
-        let parent_is_init = proc
-            .and_then(|p| p.parent())
-            .map(|pp| pp.as_u32())
-            == Some(1);
+        let parent_is_init = proc.and_then(|p| p.parent()).map(|pp| pp.as_u32()) == Some(1);
         let zombie = proc
             .map(|p| matches!(p.status(), ProcessStatus::Zombie))
             .unwrap_or(false);
@@ -439,7 +492,10 @@ fn framework_from_package_json(dir: &Path) -> Option<String> {
     let json: serde_json::Value = serde_json::from_str(&raw).ok()?;
     let has = |dep: &str| {
         json.get("dependencies").and_then(|d| d.get(dep)).is_some()
-            || json.get("devDependencies").and_then(|d| d.get(dep)).is_some()
+            || json
+                .get("devDependencies")
+                .and_then(|d| d.get(dep))
+                .is_some()
     };
     const DEPS: &[(&str, &str)] = &[
         ("next", "Next.js"),
@@ -617,17 +673,38 @@ mod tests {
 
     #[test]
     fn framework_from_cmdline() {
-        assert_eq!(detect_framework("node /x/next dev", "node", None).as_deref(), Some("Next.js"));
-        assert_eq!(detect_framework("vite", "node", None).as_deref(), Some("Vite"));
-        assert_eq!(detect_framework("ng serve", "node", None).as_deref(), Some("Angular"));
-        assert_eq!(detect_framework("python -m uvicorn app:app", "python", None).as_deref(), Some("Uvicorn"));
-        assert_eq!(detect_framework("/usr/bin/something", "something", None), None);
+        assert_eq!(
+            detect_framework("node /x/next dev", "node", None).as_deref(),
+            Some("Next.js")
+        );
+        assert_eq!(
+            detect_framework("vite", "node", None).as_deref(),
+            Some("Vite")
+        );
+        assert_eq!(
+            detect_framework("ng serve", "node", None).as_deref(),
+            Some("Angular")
+        );
+        assert_eq!(
+            detect_framework("python -m uvicorn app:app", "python", None).as_deref(),
+            Some("Uvicorn")
+        );
+        assert_eq!(
+            detect_framework("/usr/bin/something", "something", None),
+            None
+        );
     }
 
     #[test]
     fn database_by_name_and_port() {
-        assert_eq!(detect_database("postgres", &[5432]).as_deref(), Some("PostgreSQL"));
-        assert_eq!(detect_database("redis-server", &[6379]).as_deref(), Some("Redis"));
+        assert_eq!(
+            detect_database("postgres", &[5432]).as_deref(),
+            Some("PostgreSQL")
+        );
+        assert_eq!(
+            detect_database("redis-server", &[6379]).as_deref(),
+            Some("Redis")
+        );
         assert_eq!(detect_database("node", &[6379]).as_deref(), Some("Redis")); // port fallback
         assert_eq!(detect_database("node", &[3000]), None);
     }

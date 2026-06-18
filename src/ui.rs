@@ -33,7 +33,10 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
     let dev = app.rows.iter().filter(|l| l.is_dev()).count();
     let sys = app.rows.len() - dev;
     let mut spans = vec![
-        Span::styled("⚓ harbor", Style::new().fg(ACCENT).add_modifier(Modifier::BOLD)),
+        Span::styled(
+            "⚓ harbor",
+            Style::new().fg(ACCENT).add_modifier(Modifier::BOLD),
+        ),
         Span::raw("  "),
         Span::styled(format!("{dev} dev"), Style::new().fg(DEV)),
         Span::styled(format!(" · {sys} system"), Style::new().dim()),
@@ -42,7 +45,10 @@ fn header(f: &mut Frame, area: Rect, app: &App) {
         spans.push(Span::styled("  [dev only]", Style::new().fg(ACCENT).dim()));
     }
     if !app.filter.is_empty() {
-        spans.push(Span::styled(format!("  /{}", app.filter), Style::new().fg(Color::Yellow)));
+        spans.push(Span::styled(
+            format!("  /{}", app.filter),
+            Style::new().fg(Color::Yellow),
+        ));
     }
     f.render_widget(Paragraph::new(Line::from(spans)), area);
 }
@@ -149,10 +155,16 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
             Span::styled("▏", Style::new().fg(Color::Yellow)),
             Span::styled("   enter/esc to finish", Style::new().dim()),
         ]),
-        Mode::Confirm => Line::from(Span::styled("  confirm kill in the dialog…", Style::new().dim())),
+        Mode::Confirm => Line::from(Span::styled(
+            "  confirm kill in the dialog…",
+            Style::new().dim(),
+        )),
         Mode::Normal => {
             if !app.status.is_empty() {
-                Line::from(Span::styled(format!("  {}", app.status), Style::new().fg(DEV)))
+                Line::from(Span::styled(
+                    format!("  {}", app.status),
+                    Style::new().fg(DEV),
+                ))
             } else {
                 help_line()
             }
@@ -162,17 +174,25 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
 }
 
 fn help_line() -> Line<'static> {
-    let key = |k: &'static str| Span::styled(k, Style::new().fg(ACCENT).add_modifier(Modifier::BOLD));
+    let key =
+        |k: &'static str| Span::styled(k, Style::new().fg(ACCENT).add_modifier(Modifier::BOLD));
     let lbl = |t: &'static str| Span::styled(t, Style::new().dim());
     Line::from(vec![
         Span::raw(" "),
-        key("↑↓"), lbl(" move  "),
-        key("o"), lbl(" open  "),
-        key("x"), lbl(" kill  "),
-        key("/"), lbl(" filter  "),
-        key("a"), lbl(" all/dev  "),
-        key("r"), lbl(" refresh  "),
-        key("q"), lbl(" quit"),
+        key("↑↓"),
+        lbl(" move  "),
+        key("o"),
+        lbl(" open  "),
+        key("x"),
+        lbl(" kill  "),
+        key("/"),
+        lbl(" filter  "),
+        key("a"),
+        lbl(" all/dev  "),
+        key("r"),
+        lbl(" refresh  "),
+        key("q"),
+        lbl(" quit"),
     ])
 }
 
@@ -184,7 +204,10 @@ fn confirm_popup(f: &mut Frame, app: &App) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_style(Style::new().fg(Color::Red))
-        .title(Span::styled(" kill process ", Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)));
+        .title(Span::styled(
+            " kill process ",
+            Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
+        ));
     let inner = block.inner(area);
     f.render_widget(block, area);
 
@@ -203,7 +226,10 @@ fn confirm_popup(f: &mut Frame, app: &App) {
         Line::from(vec![
             Span::styled("y", Style::new().fg(DEV).add_modifier(Modifier::BOLD)),
             Span::raw(" kill (SIGTERM)   "),
-            Span::styled("K", Style::new().fg(Color::Red).add_modifier(Modifier::BOLD)),
+            Span::styled(
+                "K",
+                Style::new().fg(Color::Red).add_modifier(Modifier::BOLD),
+            ),
             Span::raw(" force (SIGKILL)   "),
             Span::styled("n/esc", Style::new().dim()),
             Span::styled(" cancel", Style::new().dim()),

@@ -1,11 +1,17 @@
 [package]
 name = "harbor"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-description = "See what's docked at every port — local dev servers, grouped by project, in your terminal."
+rust-version = "1.74"
+authors = ["Fernando Mendoza"]
+description = "See what's docked at every local port — dev servers, databases, and Docker containers, grouped by project."
 license = "MIT"
 repository = "https://github.com/FerMPY/harbor"
+homepage = "https://github.com/FerMPY/harbor"
 readme = "README.md"
+keywords = ["ports", "tui", "devtools", "processes", "lsof"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = [".github/", "Formula/", "*.md"]
 
 [[bin]]
 name = "harbor"
