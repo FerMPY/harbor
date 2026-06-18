@@ -55,6 +55,7 @@ fn table(f: &mut Frame, area: Rect, app: &mut App) {
         Cell::from("PID"),
         Cell::from("UPTIME"),
         Cell::from("CPU%"),
+        Cell::from("MEM"),
         Cell::from("PROJECT"),
     ])
     .style(Style::new().add_modifier(Modifier::BOLD).fg(ACCENT))
@@ -69,6 +70,7 @@ fn table(f: &mut Frame, area: Rect, app: &mut App) {
         Constraint::Length(7),
         Constraint::Length(12),
         Constraint::Length(5),
+        Constraint::Length(6),
         Constraint::Min(18),
     ];
 
@@ -120,6 +122,7 @@ fn row_for(l: &Listener) -> Row<'_> {
         Cell::from(dim_if_sys(l.pid.to_string())),
         Cell::from(dim_if_sys(l.uptime.clone())),
         Cell::from(dim_if_sys(l.cpu.clone())),
+        Cell::from(dim_if_sys(l.mem.clone())),
         Cell::from(dim_if_sys(project)),
     ])
 }
@@ -154,6 +157,7 @@ fn help_line() -> Line<'static> {
     Line::from(vec![
         Span::raw(" "),
         key("↑↓"), lbl(" move  "),
+        key("o"), lbl(" open  "),
         key("x"), lbl(" kill  "),
         key("/"), lbl(" filter  "),
         key("a"), lbl(" all/dev  "),

@@ -75,6 +75,7 @@ fn handle_normal(app: &mut App, code: KeyCode) -> bool {
                 app.mode = Mode::Confirm;
             }
         }
+        KeyCode::Char('o') => app.open_selected(),
         KeyCode::Char('a') => app.toggle_system(),
         KeyCode::Char('r') => {
             app.status = "refreshed".into();
@@ -133,10 +134,11 @@ fn print_once() {
             .map(|p| collect::short_home(p))
             .unwrap_or_default();
         println!(
-            "{marker} :{:<14} {:<14} pid {:<7} {}{}",
+            "{marker} :{:<14} {:<14} pid {:<7} {:>6}  {}{}",
             l.ports_str(),
             l.command,
             l.pid,
+            l.mem,
             proj,
             fw
         );
@@ -147,6 +149,6 @@ fn print_help() {
     println!(
         "harbor — see what's docked at every local port\n\n\
          USAGE:\n  harbor          interactive TUI\n  harbor -l, --list   print once and exit\n  harbor -h, --help   this help\n\n\
-         KEYS (in the TUI):\n  ↑/↓ or j/k   move      x   kill selected\n  /            filter    a   toggle system processes\n  r            refresh   q   quit"
+         KEYS (in the TUI):\n  ↑/↓ or j/k   move      o   open in browser   x   kill selected\n  /            filter    a   toggle system processes\n  r            refresh   q   quit"
     );
 }

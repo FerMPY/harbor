@@ -16,6 +16,7 @@ pub struct Listener {
     pub project: Option<String>, // project name (package.json name or dir basename)
     pub framework: Option<String>,
     pub cpu: String,
+    pub mem: String,
     pub uptime: String,
     pub is_dev: bool,
 }
@@ -109,15 +110,16 @@ pub fn collect() -> Vec<Listener> {
     let csv = pids.iter().map(u32::to_string).collect::<Vec<_>>().join(",");
 
     // Batch metadata: pid, %cpu, elapsed time, command name.
-    let mut meta: HashMap<u32, (String, String, String)> = HashMap::new();
-    for line in run("ps", &["-o", "pid=,%cpu=,etime=,comm=", "-p", &csv]).lines() {
+    let mut meta: HashMap<u32, (String, String, String, String)> = HashMap::new();
+    for line in run("ps", &["-o", "pid=,%cpu=,rss=,etime=,comm=", "-p", &csv]).lines() {
         let mut it = line.split_whitespace();
         let pid = it.next().and_then(|s| s.parse::<u32>().ok());
         let cpu = it.next().unwrap_or("").to_string();
+        let rss = it.next().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
         let etime = it.next().unwrap_or("").to_string();
         let comm = it.collect::<Vec<_>>().join(" ");
         if let Some(pid) = pid {
-            meta.insert(pid, (cpu, etime, comm));
+            meta.insert(pid, (cpu, human_mem(rss), etime, comm));
         }
     }
 
@@ -147,7 +149,7 @@ pub fn collect() -> Vec<Listener> {
 
     let mut out = Vec::new();
     for (pid, ports) in ports_by_pid {
-        let (cpu, uptime, comm_raw) = meta.get(&pid).cloned().unwrap_or_default();
+        let (cpu, mem, uptime, comm_raw) = meta.get(&pid).cloned().unwrap_or_default();
         let full_cmd = cmds.get(&pid).cloned().unwrap_or_else(|| comm_raw.clone());
         let command = basename(&comm_raw);
         let cwd = cwds.get(&pid).cloned();
@@ -163,6 +165,7 @@ pub fn collect() -> Vec<Listener> {
             project,
             framework,
             cpu,
+            mem,
             uptime,
             is_dev,
         });
@@ -175,6 +178,19 @@ pub fn collect() -> Vec<Listener> {
             .then(a.ports.iter().min().cmp(&b.ports.iter().min()))
     });
     out
+}
+
+/// Resident memory (ps reports KB) to a compact human string.
+fn human_mem(kb: u64) -> String {
+    if kb == 0 {
+        String::new()
+    } else if kb >= 1024 * 1024 {
+        format!("{:.1}G", kb as f64 / (1024.0 * 1024.0))
+    } else if kb >= 1024 {
+        format!("{}M", kb / 1024)
+    } else {
+        format!("{kb}K")
+    }
 }
 
 fn basename(s: &str) -> String {

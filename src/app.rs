@@ -32,7 +32,7 @@ impl App {
             state: TableState::default(),
             filter: String::new(),
             mode: Mode::Normal,
-            show_system: true,
+            show_system: false,
             status: String::new(),
             last_refresh: Instant::now(),
         };
@@ -101,6 +101,25 @@ impl App {
     pub fn toggle_system(&mut self) {
         self.show_system = !self.show_system;
         self.rebuild();
+    }
+
+    /// Open http://localhost:<port> for the selected process in the browser.
+    pub fn open_selected(&mut self) {
+        if let Some(l) = self.selected() {
+            if let Some(port) = l.ports.iter().min() {
+                let url = format!("http://localhost:{port}");
+                let ok = std::process::Command::new("open")
+                    .arg(&url)
+                    .status()
+                    .map(|s| s.success())
+                    .unwrap_or(false);
+                self.status = if ok {
+                    format!("opened {url}")
+                } else {
+                    format!("could not open {url}")
+                };
+            }
+        }
     }
 
     /// Kill the selected process; `hard` => SIGKILL.
