@@ -7,7 +7,7 @@ use ratatui::widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table};
 use ratatui::Frame;
 
 use crate::app::{App, Mode};
-use crate::collect::{short_home, Listener};
+use crate::collect::{short_home, Health, Kind, Listener};
 
 const ACCENT: Color = Color::Cyan;
 const DEV: Color = Color::Green;
@@ -30,7 +30,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 }
 
 fn header(f: &mut Frame, area: Rect, app: &App) {
-    let dev = app.rows.iter().filter(|l| l.is_dev).count();
+    let dev = app.rows.iter().filter(|l| l.is_dev()).count();
     let sys = app.rows.len() - dev;
     let mut spans = vec![
         Span::styled("⚓ harbor", Style::new().fg(ACCENT).add_modifier(Modifier::BOLD)),
@@ -51,24 +51,23 @@ fn table(f: &mut Frame, area: Rect, app: &mut App) {
     let header = Row::new([
         Cell::from("PORT"),
         Cell::from("NAME"),
-        Cell::from("FRAMEWORK"),
+        Cell::from("LABEL"),
         Cell::from("PID"),
         Cell::from("UPTIME"),
         Cell::from("CPU%"),
         Cell::from("MEM"),
         Cell::from("PROJECT"),
     ])
-    .style(Style::new().add_modifier(Modifier::BOLD).fg(ACCENT))
-    .bottom_margin(0);
+    .style(Style::new().add_modifier(Modifier::BOLD).fg(ACCENT));
 
     let rows: Vec<Row> = app.rows.iter().map(row_for).collect();
 
     let widths = [
         Constraint::Length(11),
-        Constraint::Length(16),
+        Constraint::Length(15),
         Constraint::Length(11),
         Constraint::Length(7),
-        Constraint::Length(12),
+        Constraint::Length(11),
         Constraint::Length(5),
         Constraint::Length(6),
         Constraint::Min(18),
@@ -83,34 +82,48 @@ fn table(f: &mut Frame, area: Rect, app: &mut App) {
     f.render_stateful_widget(table, area, &mut app.state);
 }
 
+/// Color of the leading marker: health wins, else kind.
+fn marker_color(l: &Listener) -> Color {
+    match l.health {
+        Health::Zombie => Color::Red,
+        Health::Orphaned => Color::Yellow,
+        Health::Ok => match l.kind {
+            Kind::Dev => DEV,
+            Kind::Database => Color::Blue,
+            Kind::Docker => Color::Cyan,
+            Kind::System => Color::DarkGray,
+        },
+    }
+}
+
 fn row_for(l: &Listener) -> Row<'_> {
-    let dot = if l.is_dev {
-        Span::styled("● ", Style::new().fg(DEV))
+    let mcolor = marker_color(l);
+    let dot = if l.is_dev() {
+        Span::styled("● ", Style::new().fg(mcolor))
     } else {
         Span::styled("· ", Style::new().dim())
     };
     let port = Span::styled(
         l.ports_str(),
-        if l.is_dev {
-            Style::new().fg(DEV).add_modifier(Modifier::BOLD)
+        if l.is_dev() {
+            Style::new().fg(mcolor).add_modifier(Modifier::BOLD)
         } else {
             Style::new().dim()
         },
     );
     let dim_if_sys = |s: String| {
-        if l.is_dev {
+        if l.is_dev() {
             Span::raw(s)
         } else {
             Span::styled(s, Style::new().dim())
         }
     };
 
-    let project = l
-        .cwd
-        .as_ref()
-        .map(|p| short_home(p))
-        .or_else(|| l.project.clone())
-        .unwrap_or_default();
+    // PROJECT column: path/container + git branch.
+    let mut project = l.display_project();
+    if let Some(branch) = &l.git_branch {
+        project.push_str(&format!("  ⎇ {branch}"));
+    }
 
     Row::new(vec![
         Cell::from(Line::from(vec![dot, port])),
@@ -136,10 +149,7 @@ fn footer(f: &mut Frame, area: Rect, app: &App) {
             Span::styled("▏", Style::new().fg(Color::Yellow)),
             Span::styled("   enter/esc to finish", Style::new().dim()),
         ]),
-        Mode::Confirm => Line::from(Span::styled(
-            "  confirm kill in the dialog…",
-            Style::new().dim(),
-        )),
+        Mode::Confirm => Line::from(Span::styled("  confirm kill in the dialog…", Style::new().dim())),
         Mode::Normal => {
             if !app.status.is_empty() {
                 Line::from(Span::styled(format!("  {}", app.status), Style::new().fg(DEV)))

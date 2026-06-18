@@ -4,7 +4,7 @@ use std::time::Instant;
 
 use ratatui::widgets::TableState;
 
-use crate::collect::{self, Listener};
+use crate::collect::{self, Collector, Listener};
 
 #[derive(PartialEq, Eq)]
 pub enum Mode {
@@ -14,7 +14,8 @@ pub enum Mode {
 }
 
 pub struct App {
-    all: Vec<Listener>,    // raw snapshot
+    collector: Collector,
+    all: Vec<Listener>,      // raw snapshot
     pub rows: Vec<Listener>, // filtered + sorted view
     pub state: TableState,
     pub filter: String,
@@ -27,6 +28,7 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         let mut app = Self {
+            collector: Collector::new(),
             all: Vec::new(),
             rows: Vec::new(),
             state: TableState::default(),
@@ -43,7 +45,7 @@ impl App {
     /// Re-scan the system, preserving the selected pid where possible.
     pub fn refresh(&mut self) {
         let selected_pid = self.selected().map(|l| l.pid);
-        self.all = collect::collect();
+        self.all = self.collector.snapshot();
         self.rebuild();
         if let Some(pid) = selected_pid {
             if let Some(i) = self.rows.iter().position(|l| l.pid == pid) {
@@ -59,7 +61,7 @@ impl App {
         self.rows = self
             .all
             .iter()
-            .filter(|l| self.show_system || l.is_dev)
+            .filter(|l| self.show_system || l.is_dev())
             .filter(|l| needle.is_empty() || l.haystack().contains(&needle))
             .cloned()
             .collect();
@@ -106,19 +108,12 @@ impl App {
     /// Open http://localhost:<port> for the selected process in the browser.
     pub fn open_selected(&mut self) {
         if let Some(l) = self.selected() {
-            if let Some(port) = l.ports.iter().min() {
-                let url = format!("http://localhost:{port}");
-                let ok = std::process::Command::new("open")
-                    .arg(&url)
-                    .status()
-                    .map(|s| s.success())
-                    .unwrap_or(false);
-                self.status = if ok {
-                    format!("opened {url}")
-                } else {
-                    format!("could not open {url}")
-                };
-            }
+            let port = l.min_port();
+            self.status = if collect::open_url(port) {
+                format!("opened http://localhost:{port}")
+            } else {
+                format!("could not open http://localhost:{port}")
+            };
         }
     }
 
@@ -126,7 +121,7 @@ impl App {
     pub fn kill_selected(&mut self, hard: bool) {
         if let Some(l) = self.selected() {
             let (pid, name, port) = (l.pid, l.command.clone(), l.ports_str());
-            let ok = collect::kill(pid, hard);
+            let ok = self.collector.kill(pid, hard);
             self.status = if ok {
                 format!("killed {name} on :{port} (pid {pid})")
             } else {

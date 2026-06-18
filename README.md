@@ -1,71 +1,86 @@
 # ⚓ harbor
 
-See what's docked at every local port — dev servers, databases, and background
-processes — **grouped by the project they belong to**, right in your terminal.
+See what's docked at every local port — dev servers, databases, and Docker
+containers — **grouped by the project they belong to**, right in your terminal.
 
-A fast, native (Rust) alternative to the npm-distributed port viewers. Single
-self-contained binary, no Node runtime, built on the `lsof`/`ps` that already
-ship with macOS.
+A fast, native (Rust) alternative to npm-distributed port viewers. Single
+self-contained binary, **no Node runtime**, cross-platform across **macOS and
+Linux** via the `listeners` + `sysinfo` crates (no `lsof`/`ps` shell-outs).
 
 ```
-⚓ harbor  4 dev · 4 system
-▌● 3000   next-server   Next.js     98248  01-10:18:03  0.1  ~/Works/.../checkout
- ● 3009   node          Vite        92068  07:06:18     0.0  ~/Works/.../core-api
- ● 4319   bun                       14992  02-04:43:23  0.0  ~/My Projects/pr-comprehend-poc
- ● 8081   node          Expo        80385  09:01:37     0.1  ~/Works/.../caladan-mem
- · 5000   ControlCenter             1153   02-13:23:22  0.0  /
- ↑↓ move  x kill  / filter  a all/dev  r refresh  q quit
+⚓ harbor  3 dev · 0 system
+▌● 3000   node          Next.js    98248  1d 11:30  0.0  53M  ~/Works/.../checkout  ⎇ feat/checkout-page
+ ● 3009   node          Vite       51006  00:16:30  0.2  58M  ~/Works/.../core-api  ⎇ feat/cart-pricing
+ ● 4319   bun                      14992  2d 05:54  0.0   7M  ~/My Projects/poc  ⎇ main   (orphaned)
+ ● 5452   OrbStack…     postgres:16.8  56621  11:05  0.0  471M  primary-db-v3
+ ↑↓ move  o open  x kill  / filter  a all/dev  r refresh  q quit
 ```
 
 ## Why
 
-When you have a dozen dev servers running across worktrees, the hard part isn't
-seeing *that* port 3000 is taken — it's knowing **which project** owns it.
-harbor maps every listener to its working directory and framework, separates
-your dev servers from system noise (AirPlay on :5000/:7000, OrbStack, etc.), and
-lets you kill the right one without hunting for a PID.
+With a dozen dev servers across worktrees, the hard part isn't seeing *that*
+port 3000 is taken — it's knowing **which project** owns it. harbor maps every
+listener to its working directory, **git branch**, and framework; tags databases
+and Docker containers; flags orphaned/zombie processes; and lets you kill the
+right one without hunting for a PID.
+
+## What it detects
+
+- **Frameworks** — Next.js, Nuxt, Vite, Remix, Astro, SvelteKit, Angular, Solid,
+  Qwik, Gatsby, Expo/Metro, NestJS, Express, Fastify, Koa, Hono, Django, Flask,
+  FastAPI, Rails, Laravel, and more (from the command line + `package.json`).
+- **Databases** — PostgreSQL, Redis, MongoDB, MySQL/MariaDB, Memcached, nginx,
+  etc. (by process name and canonical port).
+- **Docker** — maps host ports to container name + image via `docker ps`.
+- **Health** — flags `orphaned` (reparented to init) and `zombie` processes.
+- **Git branch** — worktree-aware, read straight from `.git/HEAD`.
 
 ## Usage
 
 ```
-harbor            # interactive TUI (live, refreshes every 2s)
-harbor --list     # print once and exit (good for scripts / piping)
+harbor                interactive TUI (live, refreshes every 2s)
+harbor <port>         deep view of one port: process tree, branch, repo, mem
+harbor ps | --list    print every listener once
+harbor --json         machine-readable output (for scripts)
+harbor kill <p> [-f]  kill by port / pid / range (3000, 42872, 3000-3010); -f = SIGKILL
+harbor clean [-n][-f] reap orphaned/zombie dev processes (-n = preview)
+harbor watch          stream port start/stop events
 harbor --help
 
 # in the TUI
-↑/↓ or j/k   move          x    kill selected (y = SIGTERM, K = SIGKILL)
-/            filter         a    toggle system processes
-r            refresh        q    quit
+↑/↓ or j/k   move          o    open http://localhost:<port>
+x            kill (y=TERM, K=KILL)    /  filter    a  toggle system    r  refresh    q  quit
 ```
 
 ## Install
-
-### Homebrew (recommended once published)
-
-```sh
-brew install FerMPY/tap/harbor
-```
 
 ### From source
 
 ```sh
 cargo install --path .          # installs to ~/.cargo/bin/harbor
-# or just build and symlink:
+# or build and symlink:
 cargo build --release
 ln -sf "$PWD/target/release/harbor" ~/.local/bin/harbor
 ```
 
-Requires Rust (`brew install rust`).
+Requires Rust (`brew install rust`, or `apt install cargo` on Linux).
+
+### Homebrew (once published)
+
+```sh
+brew install FerMPY/tap/harbor
+```
 
 ## How it works
 
-- `lsof -nP -iTCP -sTCP:LISTEN` → every TCP listener + its port and PID
-- `ps` (batched) → command, full args, %CPU, uptime
-- `lsof -d cwd` → each process's working directory
-- framework guess from the command line, falling back to the project's
-  `package.json` dependencies
+- `listeners` crate → every TCP listener + its PID (netlink/procfs on Linux,
+  libproc on macOS)
+- `sysinfo` crate → command line, working directory, CPU, memory, uptime, status
+- `.git/HEAD` → current branch (handles linked worktrees)
+- `docker ps` → host-port-to-container mapping (skipped if docker isn't running)
 
-No daemon, no config, no telemetry.
+No daemon, no config, no telemetry. Verified on macOS (Apple Silicon) and
+Ubuntu Linux.
 
 ## License
 
